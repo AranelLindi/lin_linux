@@ -1,17 +1,16 @@
-
-# Fedora SSD2 Setup Guide
+# Fedora Setup Guide
 ## 1. SSD identifizieren
 <code>
 lsblk -f
 </code>
 (list block devices)
 
-Suchen der zweiten/dritten SSD (z. B. <code>nvme1n1</code> / <code>sda1</code>)
+Suchen der zweiten/dritten SSD (z. B. <code>nvme1n1</code> / <code>sda</code>)
 
 Typische Ausgabe:
 <code>/dev/nvme0n1</code> - System-SSD
 <code>/dev/nvme1n1</code> - zweite M.2
-<code>/dev/sda1</code> - SATA SSD
+<code>/dev/sda</code> - SATA SSD
 
 ---
 
@@ -20,12 +19,14 @@ Typische Ausgabe:
 **ACHTUNG**: Löscht alle Daten!
 
 ### 2.1. Partitionieren
+Arbeitet auf Plattenebene nicht Partitionsebene!
+
 <code>
 sudo fdisk /dev/nvme1n1
 </code>
 
 <code>
-sudo fdisk /dev/sda1
+sudo fdisk /dev/sda
 </code>
 
 Dann im Tool:
@@ -42,25 +43,30 @@ sudo mkfs.btrfs /dev/nvme1n1p1
 </code>
 
 Anmerkung: Eine Partition wird immer mit <code>pX</code> hinten dran gehängt. Bei <code>sda</code> wird direkt hoch gezählt (<code>sdaX</code>).
-**Wichtig!** Wird bei <code>mkfs.X</code> direkt die gesamte Platte verwendet, würde die gesamte Parition überschrieben werden, was zur Folge hätte, dass es keine Partition mehr gäbe! Deswegen nur mit Zusatz <code>pX</code> oder <code>sdaX</code>.
+**Wichtig!** Wird bei <code>mkfs.X</code> direkt die gesamte Platte verwendet, würde die gesamte Parition überschrieben werden, was zur Folge hätte, dass es keine Partition mehr gäbe (weil Partitionstabelle überschrieben würde)! Deswegen nur mit Zusatz <code>pX</code> oder <code>sdaX</code>.
 - <code>mkfs</code> - make file system
 - <code>.btrfs</code> - Das zu verwendende File System (oder <code>.ext4</code> / <code>.vfat -F 32</code>)
 - <code>/dev/nvme1n1p1</code> - Die Partition, die formatiert werden soll
 
 Kommando bricht ab falls bereits ein Dateisystem erkannt wird. In diesem Fall Option <code>-f</code> verwenden.
-**Idee**: zweite M.2 SSD mit <code>btrfs</code> formatieren, erste M.2 und SATA SSD mit <code>ext4</code>.
+**Idee**: zweite M.2 SSD mit <code>ext4</code> formatieren, erste M.2 und SATA SSD mit <code>btrfs</code>.
 **Hinweis!** Bei <code>btrfs</code> wird kein klassisches <code>fsck</code> verwendet, da das Dateisystem eigene Integritätsmechanismen besitzt.
+
+Vorschlag:
+- primäre SSD (NVME, OS + Games): <code>btrfs</code>
+- sekundäre SSD (NVME, Development): <code>ext4</code>
+- backup SSD (SATA): <code>btrfs</code>
 
 ---
 
 ## 3. Mountpunkt erstellen
 
 <code>
-sudo mkdir /mnt/ssd2
+sudo mkdir -p /development
 </code> - zweite SSD via M.2
 
 <code>
-sudo mkdir /mnt/sda1
+sudo mkdir -p /backup
 </code> - erste SSD via SATA
 
 ---
@@ -74,26 +80,23 @@ blkid
 Beispiel:
 
 <code>
- /dev/nvme1n1p1: UUID="1234-ABCD" TYPE="btrfs"
- </code>
+/dev/nvme1n1p1: UUID="1234-ABCD" TYPE="btrfs"
+</code>
 
 ---
 
 ## 5. fstab bearbeiten
+*Wichtig!* Kommentare in fstab werden am Zeilenanfang mit <code>#</code> eingeläutet! Unbedingt nutzen um Partitionen zu bescheiben!
 
 <code>
 sudo nano /etc/fstab
 </code>
 
-Neue Zeile hinzufügen:
+Neue Zeile hinzufügen (nur exemplarisch, Parameter stehen weiter unten!):
 
 <code>
-UUID=1234-ABCD /mnt/ssd2 btrfs defaults,noatime 0 2
-</code> - SSD via M.2
-
-<code>
-UUID=4321-DCBA /mnt/sda1 ext4 defaults,noatime,nofail 0 2
-</code> - SSD via SATA
+UUID=1234-ABCD /development btrfs defaults,noatime 0 2
+</code> - Parameter je Laufwerk siehe unten
 
 - <code>UUID=</code> - welches Gerät
 - <code>/mnt/ssd2</code> - wohin mounten
@@ -106,6 +109,13 @@ Wichtige Optionen erklärt:
 - <code>defaults</code> - Standardwerte (rw, auto, exec, etc. [normales Verhalten])
 - <code>noatime</code> - Verhindert, dass bei jedem Lesen die Zugriffszeit gespeichert wird
 - <code>nofail</code> - System bootet auch wenn diese SSD nicht gefunden werden kann
+- <code>compress=zstd</code> - Komprimiert Daten beim schreiben / entkomprimiert sie beim Lesen. Spart Speicherplatz und belastet CPU nur marginal.
+- <code>data=ordered</code> - Nur für ext4 relevant und quasi Standardverhalten (Daten werden vor Metadaten geschrieben)
+
+Vorschlag:
+- primäre SSD: <code>compress=zstd,noatime,ssd,space_cache=v2 0 0</code>
+- sekundäre SSD: <code>noatime,data=ordered 0 2</code>
+- backup SSD: <code>compress=zstd:3,noatime,ssd,space_cache=v2 0 0</code>
 
 ---
 
@@ -123,82 +133,50 @@ Wenn kein Fehler erscheint, ist alles korrekt
 
 ### Für zweite SSD (M.2):
 <code>
-sudo mkdir -p /mnt/ssd2/dev
+sudo mkdir -p /development/projects
 </code>
 
 <code>
-sudo mkdir -p /mnt/ssd2/projects
-</code>
-
-<code>
-sudo mkdir -p /mnt/ssd2/media
-</code>
-
-<code>
-sudo mkdir -p /mnt/ssd2/archive
+sudo mkdir -p /development/yocto
 </code>
 
 ### Für erste SSD via SATA (Backup):
 <code>
-sudo mkdir -p /mnt/sda1/backup
+sudo mkdir -p /backup/snapshots
+</code>
+
+<code>
+sudo mkdir -p /backup/custom_backup
 </code>
 
 Besitz setzen (angenommen: <code>slin</code>)
 
 <code>
-sudo chown -R slin:slin /mnt/ssd2
+sudo chown -R slin:slin /development
 </code>
 
 <code>
-sudo chown -R slin:slin /mnt/sda1
+sudo chown -R slin:slin /backup
 </code>
 
 ---
 
-## 8. Symlinks erstellen
-<code>~</code> ist eine Abkürzung für <code>/home/slin/</code>. Also würde z.B. <code>~/dev</code> unter <code>/home/slin/dev</code> zu finden sein.
-
-### M.2 SSD:
-<code>
-ln -s /mnt/ssd2/dev ~/dev
-</code>
-
-<code>
-ln -s /mnt/ssd2/projects ~/projects
-</code>
-
-<code>
-ln -s /mnt/ssd2/media ~/media
-</code>
-
-### SATA SSD:
-<code>
-ln -s /mnt/sda1/backup ~/backup
-</code>
-
-Hinweis: Falls ein Zielordner bereits existiert, schlägt <code>ln -s</code> fehl.
+## 8. Symlinks erstellen (Kann übersprungen werden wenn Laufwerke direkt gemountet werden und nicht in /mnt/...)
+<code>~</code> ist eine Abkürzung für <code>/home/slin/</code>. Also würde z.B. <code>~/development</code> unter <code>/home/slin/development</code> zu finden sein.
 
 ---
 
 ## Ergebnis
 
-Die zweite SSD ist unter <code>/mnt/ssd2</code> eingebunden.
+Die zweite SSD ist unter <code>/development</code> eingebunden.
 
 Zugriff erfolgt bequem über:
 
 <code>
-~/dev
+~/development
 </code>
 
-<code>
-~/projects
-</code>
-
-<code>
-~/media
-</code>
-
-Die SATA SSD ist unter <code>/mnt/sda1</code> eingebunden.
+Die SATA SSD ist unter <code>/backup</code> eingebunden.
 
 Zugriff erfolgt über:
 
