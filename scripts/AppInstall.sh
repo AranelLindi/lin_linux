@@ -160,6 +160,31 @@ fi
 echo
 
 # --------------------------------------------------
+# Heroic Game Launcher
+# --------------------------------------------------
+if rpm -q heroic-games-launcher-bin > /dev/null 2>&1; then
+    echo "Heroic Games Launcher ist bereits installiert."
+else
+    echo "Heroic Games Launcher (inkl. COPR Repository)"
+    read -r -p "Installieren? [y/N]: " reply
+    if [[ "$reply" == "y" || "$reply" == "Y" ]]; then
+        echo "Heroic Games Launcher COPR Repository aktivieren"
+        read -r -p "Repository aktivieren? [y/N]: " reply2
+	if [[ "$reply2" == "y" || "$reply2" == "Y" ]]; then
+	    sudo dnf copr enable atim/heroic-games-launcher
+	fi
+	echo
+
+	echo "Heroic Games Launcher installieren"
+	read -r -p "Jetzt installieren? [y/N]: " reply3
+	if [[ "$reply3" == "y" || "$reply3" == "Y" ]]; then
+	    sudo dnf install heroic-games-launcher-bin
+	fi
+    fi
+fi
+echo
+
+# --------------------------------------------------
 # CoolerControl (inkl. COPR Repository)
 # --------------------------------------------------
 if rpm -q coolercontrol >/dev/null 2>&1; then
