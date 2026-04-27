@@ -100,8 +100,9 @@ sudo dnf install -y \
   || true
 
 # System update
-echo "Updating system..."
-sudo dnf update -y
+#echo "Updating system..."
+#sudo dnf update -y
+# Disabled complete system update process during this script, can cause heavy errors ! Better do this afterwards !
 
 # Core packages
 # Steam: Gaming platform (native Linux client, uses Proton for Windows games)
@@ -156,6 +157,12 @@ flatpak install -y flathub net.davidotek.pupgui2
 # OBS Studio
 flatpak install -y flathub com.obsproject.Studio
 
+echo "Installing 32-bit graphics libraries (required for Steam/Proton)..."
+sudo dnf install -y \
+  mesa-vulkan-drivers.i686 \
+  mesa-dri-drivers.i686 \
+  || true
+
 echo ""
 echo "======================================"
 echo " Installation complete!"
@@ -167,6 +174,18 @@ echo "======================================"
 
 echo ""
 echo "==[ Gaming Cheat Sheet ]=="
+echo ""
+
+echo "IMPORTANT:"
+echo "Set game install directories to:"
+echo "  Steam  → /home/games/steam"
+echo "  Lutris → /home/games/lutris"
+echo ""
+
+echo "Test GameMode:"
+echo "  gamemoded -t"
+echo "Muss eventuell erst noch aktiviert werden (gamemoded daemon!)"
+echo "  systemctl --user enable --now gamemoded"
 echo ""
 
 echo "Steam Launch Options (Standard):"
@@ -220,6 +239,13 @@ echo "  - Gamescope FSR uses FSR1 only"
 echo "  - Wayland: no need to disable compositor"
 echo "  - vkBasalt can improve FSR sharpness"
 echo ""
+
+echo "Wenn Bild unscharf ist:"
+echo "  ENABLE_VKBASALT=1 mangohud gamemoderun %command%"
+echo ""
+
+echo ""
+echo "Reboot recommended!"
 
 echo "======================================"
 echo " Done. Happy Gaming"

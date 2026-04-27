@@ -62,9 +62,9 @@ BASE_PACKAGES=(
 )
 
 PYTHON_PACKAGES=(
-    numpy
-    pandas
-    matplotlib
+#    numpy
+#    pandas
+#    matplotlib
 )
 
 # -----------------------------
@@ -108,9 +108,11 @@ else
     warn "Starte später: source ~/.cargo/env"
 fi
 
-log "Installiere Python-Pakete im User-Kontext"
-python3 -m pip install --user --upgrade pip
-python3 -m pip install --user "${PYTHON_PACKAGES[@]}"
+#log "Installiere Python-Pakete im User-Kontext"
+#python3 -m pip install --user --upgrade pip
+#python3 -m pip install --user "${PYTHON_PACKAGES[@]}"
+# Es ist nicht ratsam, dass Pakete systemweit installiert werden.
+# Besser ist es, sie für jede venv separat zu installieren !
 
 
 log "Richte VS Code Repository ein"
@@ -154,6 +156,9 @@ for tool in "${TOOLS_TO_CHECK[@]}"; do
         warn "$tool wurde nicht gefunden"
     fi
 done
+
+sudo usermod -aG dialout "$USER"
+echo "Für serielle Geräte ggf. Benutzer zu dialout/uucp hinzufügen und neu einloggen."
 
 
 log "Setup abgeschlossen"

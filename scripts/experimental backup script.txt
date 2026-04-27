@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SRC="/.snapshots"
+DST="/mnt/backup"
+
+# letztes Snapshot finden
+LAST=$(btrfs subvolume list -o $DST | tail -n1 | awk '{print $9}')
+
+# neues Snapshot
+NEW="/.snapshots/root-$(date +%F)"
+
+btrfs subvolume snapshot -r / $NEW
+
+if [ -z "$LAST" ]; then
+    btrfs send $NEW | btrfs receive $DST
+else
+    btrfs send -p $LAST $NEW | btrfs receive $DST
+fi

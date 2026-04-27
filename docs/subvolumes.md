@@ -1,11 +1,17 @@
 # Fedora Btrfs Subvolume Guide
 
+Wichtig!  
+`/`  → Root-Verzeichnis  
+`~`  → Home-Verzeichnis des aktuellen Users (z. B. /home/stefan)
+
 ## Ziel
 
 Dieses Setup trennt System und Benutzerdaten logisch:
 
-- `@` → Root (`/`)
-- `@home` → Home (`/home`)
+- `@`           → Root (`/`)
+- `@home`       → Home (`/home`)
+- `@games`      → Games (`/home/games`)
+- `@snapshots`  → Snapshots (`/.snapshots`) [liegt im Root !]
 
 Vorteile:
 - saubere Snapshots
@@ -39,6 +45,8 @@ Vorteile:
 |----------|------|
 | `root`   | `@`  |
 | `home`   | `@home` |
+
+Siehe Anfang des Dokuments für genaue Liste der Subvolumes!
 
 ---
 

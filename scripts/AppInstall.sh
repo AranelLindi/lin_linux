@@ -104,6 +104,24 @@ fi
 echo
 
 # --------------------------------------------------
+# Snapper (Snapshot Tool)
+# Muss später konfiguriert werden. Das ganze Thema
+# Snapshots ist sehr komplex und muss genau durchdacht
+# werden. Aber zumindest die richtige Software ist
+# dabei.
+# --------------------------------------------------
+if rpm -q snapper >/dev/null 2>&1; then
+    echo "Snapper ist bereits installiert."
+else
+    echo "Snapper"
+    read -r -p "Installieren? [y/N]: " reply
+    if [[ "$reply" == "y" || "$reply" == "Y" ]]; then
+        sudo dnf install snapper
+    fi
+fi
+echo
+
+# --------------------------------------------------
 # Inkscape
 # --------------------------------------------------
 if rpm -q inkscape >/dev/null 2>&1; then
